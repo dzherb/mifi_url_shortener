@@ -7,8 +7,6 @@ import java.util.Date;
 import java.util.Objects;
 
 public class ShortenedUrlImpl implements ShortenedUrl {
-    // todo equals compare and other bullshit
-
     private final String fullUrl;
     private final User author;
     private final String hash;
@@ -16,7 +14,9 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     private Integer totalNavigations;
     private Integer maxNavigations;
 
-    ShortenedUrlImpl(String fullUrl, User author, Integer maxNavigations, Integer timeToLiveInSeconds) {
+    static public class UrlNotValidException extends RuntimeException {}
+
+    public ShortenedUrlImpl(String fullUrl, User author, Integer maxNavigations, Integer timeToLiveInSeconds) {
         AppConfiguration config = AppConfiguration.getInstance();
 
         this.fullUrl = fullUrl;
@@ -24,6 +24,11 @@ public class ShortenedUrlImpl implements ShortenedUrl {
         this.hash = config.getHashGenerator().generate(fullUrl);
         this.maxNavigations = Math.max(maxNavigations, config.getUrlDefaultMaxNavigations());
         this.expiresAt = new Date(System.currentTimeMillis() + Math.min(timeToLiveInSeconds, config.getUrlDefaultTimeToLiveInSeconds()) * 1000L);
+        config.getShortenedUrlRegistry().addUrl(this);
+    }
+
+    public static void validateUrl(String url) throws UrlNotValidException {
+        // todo
     }
 
     @Override
@@ -42,10 +47,10 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     }
 
     @Override
-    public void navigate() {
-        if (!isActive()) return;  // todo exception?
+    public void navigate() throws UrlNotActiveException {
+        if (!isActive()) throw new UrlNotActiveException();
         System.out.println("ПЕРЕХОД ПО ССЫЛКЕ " + fullUrl);
-        // navigate
+        // todo navigate
         onNavigationHappened();
     }
 
@@ -68,5 +73,10 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     @Override
     public int hashCode() {
         return Objects.hash(fullUrl, author, hash);
+    }
+
+    @Override
+    public String toString() {
+        return getUrl();
     }
 }

@@ -6,6 +6,8 @@ public interface ShortenedUrl {
     String getUrl();
     String getHash();
     User getAuthor();
-    void navigate();
+    void navigate() throws UrlNotActiveException;
     boolean isActive();
+
+    class UrlNotActiveException extends RuntimeException {}
 }
