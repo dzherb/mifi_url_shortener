@@ -6,7 +6,6 @@ public class HashGeneratorImpl implements HashGenerator {
     @Override
     public String generate(String url) {
         counter++;
-        // Return hexadecimal representation
-        return String.format("%X ", counter);
+        return String.format("%X", counter);
     }
 }

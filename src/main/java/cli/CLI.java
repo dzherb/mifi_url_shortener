@@ -24,49 +24,49 @@ public class CLI {
         CLI cli = new CLI();
         cli.greet();
         cli.authenticateUser();
-        while (cli.scanner.hasNext()) {
+        while (true) {
             cli.handleCommand();
         }
     }
 
     private void greet() {
-        System.out.println("""
-        Добро пожаловать в приложение для сокращения ссылок!
-        Чтобы войти в аккаунт, введите ваш UUID. Для создания нового пользователя введите любой символ
+        System.out.print("""
+        \nДобро пожаловать в приложение для сокращения ссылок!
+        Чтобы войти в аккаунт, введите ваш UUID.
+        Для создания нового пользователя введите любой символ
         """);
     }
 
     private void authenticateUser() {
+        System.out.print("\n>>> ");
         String uuid = scanner.nextLine().trim();
 
         if (!authentication.logIn(uuid)) {
-            System.out.println("Не удалось пройти аутентификацию\n");
+            System.out.println("\nНе удалось пройти аутентификацию");
             sessionUser = createNewUser();
             authentication.logIn(sessionUser.getUUID());
             return;
         }
-        System.out.println("Ура! Вы успешно вошли");
+        System.out.println(TerminalColors.GREEN + "\nУра! Вы успешно вошли" + TerminalColors.RESET);
         sessionUser = userRegistry.getUser(uuid).get();
     }
 
     private User createNewUser() {
         User user = new BaseUser();
-        System.out.println("Новый профиль был создан, ваш UUID:\n" + user.getUUID() + "\n");
+        System.out.println("\nНовый профиль был создан, ваш UUID:\n" + TerminalColors.GREEN + user.getUUID() + TerminalColors.RESET);
         return user;
     }
 
     private void handleCommand() {
         System.out.println("""
-        \n
-        Введите одну из доступных команд:
+        \nВведите одну из доступных команд:
         1 - переход по сокращенной ссылке
         2 - создание ссылки
         3 - редактирование одной из ранее созданных ссылок
         4 - вывод всех ваших ссылок
-        5 - выход из аккаунта
-        q - выход из приложения
-        \n
-        """);
+        5 - вывести свой UUID
+        6 - выход из аккаунта
+        q - выход из приложения""");
 
         switch (getCommand()) {
             case '1':
@@ -82,6 +82,9 @@ public class CLI {
                 onUrlListCommand();
                 break;
             case '5':
+                onPrintUUIDCommand();
+                break;
+            case '6':
                 onLogoutCommand();
                 break;
             case 'q':
@@ -90,12 +93,13 @@ public class CLI {
     }
 
     private char getCommand() {
+        System.out.print("\n>>> ");
         return scanner.nextLine().trim().charAt(0);
     }
 
     private void onUrlNavigateCommand() {
-        final String notFoundMessage = "Такой ссылки не существует";
-        final String urlNotActiveMessage = "Не удалось перейти, ссылка больше недоступна";
+        final String notFoundMessage = TerminalColors.RED + "\nТакой ссылки не существует" + TerminalColors.RESET;
+        final String urlNotActiveMessage = TerminalColors.RED +  "\nНе удалось перейти, ссылка больше недоступна" + TerminalColors.RESET;
 
         Optional<ShortenedUrl> shortenedUrl = getShortenedUrlByName();
         try {
@@ -107,44 +111,62 @@ public class CLI {
     }
 
     private void onUrlCreateCommand() {
-        System.out.println("Введите ссылку, которую хотите сократить:\n>>> ");
+        System.out.print("\nВведите ссылку, которую хотите сократить:\n>>> ");
         String fullUrl = scanner.nextLine().trim();
         try {
             ShortenedUrlImpl.validateUrl(fullUrl);
         }
         catch (ShortenedUrlImpl.UrlNotValidException e) {
-            System.out.println("Похоже, что вы ввели невалидную ссылку :с");
+            System.out.println(TerminalColors.RED + "Похоже, что вы ввели невалидную ссылку :с" + TerminalColors.RESET);
             return;
         }
-        System.out.println("Введите лимит переходов:\n>>> ");
+        System.out.print("Введите лимит переходов:\n>>> ");
         Integer maxNavigations = scanner.nextInt();
-        System.out.println("Введите время жизни ссылки в секундах:\n>>> ");
+        System.out.print("Введите время жизни ссылки в секундах:\n>>> ");
         Integer timeToLiveInSeconds = scanner.nextInt();
+        scanner.nextLine();
 
         ShortenedUrl shortenedUrl = new ShortenedUrlImpl(fullUrl, sessionUser, maxNavigations, timeToLiveInSeconds);
-        System.out.println("\nСсылка успешно создана: " + shortenedUrl.getUrl() + "\n");
+        System.out.println(TerminalColors.GREEN + "\nСсылка успешно создана: " + shortenedUrl.getUrl() + TerminalColors.RESET);
+        shortenedUrl.printCharacteristics();
     }
 
     private void onUrlEditCommand() {
-        final String notFoundMessage = "Такой ссылки не существует, убедитесь, что вы создавали ее ранее";
+        final String notFoundMessage = TerminalColors.RED + "\nТакой ссылки не существует, убедитесь, что вы создавали ее ранее" + TerminalColors.RESET;
 
         Optional<ShortenedUrl> shortenedUrl = getShortenedUrlByName();
         shortenedUrl.ifPresentOrElse(url -> {
-            // todo edit
+            ShortenedUrlImpl urlToEdit = (ShortenedUrlImpl) url;
+            System.out.print("Введите максимальное число переходов:\n>>> ");
+            urlToEdit.updateMaxNavigations(scanner.nextInt());
+            System.out.print("Введите новое время жизни ссылки в секундах:\n>>> ");
+            urlToEdit.updateExpirationDate(scanner.nextInt());
+            System.out.println(TerminalColors.GREEN + "Ссылка успешно обновлена!" + TerminalColors.RESET);
+            urlToEdit.printCharacteristics();
+            scanner.nextLine();
         }, () -> System.out.println(notFoundMessage));
     }
 
     private void onUrlListCommand() {
         List<ShortenedUrl> urls = shortenedUrlRegistry.getShortenedUrlsForUser(sessionUser);
-        System.out.println("\nВаши ссылки:\n");
-        for (ShortenedUrl shortenedUrl : urls) {
-            System.out.println(shortenedUrl);
+        if (urls.isEmpty()) {
+            System.out.println("\nПока пусто...");
+            return;
         }
-        System.out.println("\n");
+        System.out.println("\nВаши ссылки:");
+        for (ShortenedUrl shortenedUrl : urls) {
+            System.out.println("\n" + TerminalColors.BLUE + shortenedUrl + TerminalColors.RESET);
+            shortenedUrl.printCharacteristics();
+        }
+    }
+
+    private void onPrintUUIDCommand() {
+        System.out.println("\nВаш UUID:\n" + TerminalColors.BLUE + sessionUser.getUUID() + TerminalColors.RESET);
     }
 
     private void onLogoutCommand() {
         sessionUser = null;
+        greet();
         authenticateUser();
     }
 
@@ -153,6 +175,7 @@ public class CLI {
     }
 
     private Optional<ShortenedUrl> getShortenedUrlByName() {
+        System.out.print("\nВведите сокращенную ссылку:\n>>> ");
         String shortenedUrlName = scanner.nextLine().trim();
         return shortenedUrlRegistry.getShortenedUrlByName(shortenedUrlName);
     }

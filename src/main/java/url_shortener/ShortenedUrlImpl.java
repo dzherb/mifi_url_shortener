@@ -1,6 +1,7 @@
 package main.java.url_shortener;
 
 import main.java.AppConfiguration;
+import main.java.cli.TerminalColors;
 import main.java.users.User;
 
 import java.util.Date;
@@ -11,7 +12,7 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     private final User author;
     private final String hash;
     private Date expiresAt;
-    private Integer totalNavigations;
+    private Integer totalNavigations = 0;
     private Integer maxNavigations;
 
     static public class UrlNotValidException extends RuntimeException {}
@@ -22,13 +23,35 @@ public class ShortenedUrlImpl implements ShortenedUrl {
         this.fullUrl = fullUrl;
         this.author = author;
         this.hash = config.getHashGenerator().generate(fullUrl);
-        this.maxNavigations = Math.max(maxNavigations, config.getUrlDefaultMaxNavigations());
-        this.expiresAt = new Date(System.currentTimeMillis() + Math.min(timeToLiveInSeconds, config.getUrlDefaultTimeToLiveInSeconds()) * 1000L);
+        this.maxNavigations = getFinalMaxNavigations(maxNavigations);
+        this.expiresAt = getExpirationDate(timeToLiveInSeconds);
+
         config.getShortenedUrlRegistry().addUrl(this);
     }
 
+    private Integer getFinalMaxNavigations(Integer maxNavigations) {
+        return Math.max(maxNavigations, AppConfiguration.getInstance().getUrlDefaultMaxNavigations());
+    }
+
+    private Date getExpirationDate(Integer timeToLiveInSeconds) {
+        return new Date(
+            System.currentTimeMillis() + Math.min(timeToLiveInSeconds,
+            AppConfiguration.getInstance().getUrlDefaultTimeToLiveInSeconds()) * 1000L
+        );
+    }
+
+    public void updateMaxNavigations(Integer maxNavigations) {
+        this.maxNavigations = getFinalMaxNavigations(maxNavigations);
+    }
+
+    public void updateExpirationDate(Integer timeToLiveInSeconds) {
+        this.expiresAt = getExpirationDate(timeToLiveInSeconds);
+    }
+
     public static void validateUrl(String url) throws UrlNotValidException {
-        // todo
+        if (url == null || !url.trim().startsWith("http")) {
+            throw new UrlNotValidException();
+        }
     }
 
     @Override
@@ -61,6 +84,17 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     @Override
     public boolean isActive() {
         return expiresAt.after(new Date()) && totalNavigations < maxNavigations;
+    }
+
+    @Override
+    public void printCharacteristics() {
+        System.out.println(
+            TerminalColors.YELLOW +
+            "\nВремя жизни ссылки: " + expiresAt +
+            "\nМаксимальное количество переходов: " + maxNavigations +
+            "\nСовершенных переходов: " + totalNavigations +
+            "\nАктивна ли ссылка: " + (isActive() ? "да" : "нет") + TerminalColors.RESET
+        );
     }
 
     @Override

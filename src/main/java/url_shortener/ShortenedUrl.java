@@ -8,6 +8,7 @@ public interface ShortenedUrl {
     User getAuthor();
     void navigate() throws UrlNotActiveException;
     boolean isActive();
+    void printCharacteristics();
 
     class UrlNotActiveException extends RuntimeException {}
 }

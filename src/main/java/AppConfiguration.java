@@ -29,7 +29,7 @@ public class AppConfiguration {
 
     public static void initializeFromJsonFile(Path configFile) {
         // todo
-        configInstance = new AppConfiguration(1, 1, "shrt.com");
+        configInstance = new AppConfiguration(5, 500, "shrt.com");
     }
 
     public static AppConfiguration getInstance() {
