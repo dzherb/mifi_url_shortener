@@ -2,6 +2,7 @@ package main.java.cli;
 
 import main.java.AppConfiguration;
 import main.java.url_shortener.ShortenedUrl;
+import main.java.url_shortener.ShortenedUrlCleaner;
 import main.java.url_shortener.ShortenedUrlImpl;
 import main.java.url_shortener.ShortenedUrlRegistry;
 import main.java.users.Authentication;
@@ -17,11 +18,13 @@ public class CLI {
     private final UserRegistry userRegistry = AppConfiguration.getInstance().getUserRegistry();
     private final Authentication authentication = AppConfiguration.getInstance().getAuthentication();
     private final ShortenedUrlRegistry shortenedUrlRegistry = AppConfiguration.getInstance().getShortenedUrlRegistry();
+    private final ShortenedUrlCleaner shortenedUrlCleaner = AppConfiguration.getInstance().getShortenedUrlCleaner();
     private User sessionUser;
     private final Scanner scanner = new Scanner(System.in);
 
     public static void runApp() {
         CLI cli = new CLI();
+        cli.runInactiveUrlsCleaner();
         cli.greet();
         cli.authenticateUser();
         while (true) {
@@ -127,7 +130,7 @@ public class CLI {
         scanner.nextLine();
 
         ShortenedUrl shortenedUrl = new ShortenedUrlImpl(fullUrl, sessionUser, maxNavigations, timeToLiveInSeconds);
-        System.out.println(TerminalColors.GREEN + "\nСсылка успешно создана: " + shortenedUrl.getUrl() + TerminalColors.RESET);
+        System.out.println(TerminalColors.GREEN + "\nСсылка успешно создана: " + TerminalColors.RESET + shortenedUrl.getUrl());
         shortenedUrl.printCharacteristics();
     }
 
@@ -155,7 +158,13 @@ public class CLI {
         }
         System.out.println("\nВаши ссылки:");
         for (ShortenedUrl shortenedUrl : urls) {
-            System.out.println("\n" + TerminalColors.BLUE + shortenedUrl + TerminalColors.RESET);
+            final String url = shortenedUrl.getUrl();
+            System.out.println();
+            if (shortenedUrl.isActive()) {
+                System.out.println(TerminalColors.BLUE + shortenedUrl + TerminalColors.RESET);
+            } else {
+                System.out.println(TerminalColors.RED + shortenedUrl + TerminalColors.RESET);
+            }
             shortenedUrl.printCharacteristics();
         }
     }
@@ -178,5 +187,19 @@ public class CLI {
         System.out.print("\nВведите сокращенную ссылку:\n>>> ");
         String shortenedUrlName = scanner.nextLine().trim();
         return shortenedUrlRegistry.getShortenedUrlByName(shortenedUrlName);
+    }
+
+    private void runInactiveUrlsCleaner() {
+        final int checkPeriodInSeconds = 5;
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(checkPeriodInSeconds * 1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                shortenedUrlCleaner.cleanInactiveUrls();
+            }
+        }).start();
     }
 }

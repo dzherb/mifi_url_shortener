@@ -4,6 +4,8 @@ import main.java.AppConfiguration;
 import main.java.cli.TerminalColors;
 import main.java.users.User;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 
@@ -14,6 +16,7 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     private Date expiresAt;
     private Integer totalNavigations = 0;
     private Integer maxNavigations;
+    private Boolean isDeleted = false;
 
     static public class UrlNotValidException extends RuntimeException {}
 
@@ -83,17 +86,29 @@ public class ShortenedUrlImpl implements ShortenedUrl {
 
     @Override
     public boolean isActive() {
-        return expiresAt.after(new Date()) && totalNavigations < maxNavigations;
+        return !isDeleted && expiresAt.after(new Date()) && totalNavigations < maxNavigations;
+    }
+
+    @Override
+    public void delete() {
+        isDeleted = true;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return isDeleted;
     }
 
     @Override
     public void printCharacteristics() {
+        final DateFormat dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");;
+
         System.out.println(
             TerminalColors.YELLOW +
-            "\nВремя жизни ссылки: " + expiresAt +
+            "\nСсылка активна до: " + dateFormat.format(expiresAt) +
             "\nМаксимальное количество переходов: " + maxNavigations +
             "\nСовершенных переходов: " + totalNavigations +
-            "\nАктивна ли ссылка: " + (isActive() ? "да" : "нет") + TerminalColors.RESET
+            "\nАктивна ли ссылка: " + (isActive() ? TerminalColors.GREEN + "да" : TerminalColors.RED + "нет") + TerminalColors.RESET
         );
     }
 
