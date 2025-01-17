@@ -4,6 +4,10 @@ import main.java.AppConfiguration;
 import main.java.cli.TerminalColors;
 import main.java.users.User;
 
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -75,8 +79,12 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     @Override
     public void navigate() throws UrlNotActiveException {
         if (!isActive()) throw new UrlNotActiveException();
-        System.out.println("ПЕРЕХОД ПО ССЫЛКЕ " + fullUrl);
-        // todo navigate
+        System.out.println("\nПЕРЕХОД ПО ССЫЛКЕ " + fullUrl);
+        try {
+            Desktop.getDesktop().browse(new URI(fullUrl));
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
         onNavigationHappened();
     }
 

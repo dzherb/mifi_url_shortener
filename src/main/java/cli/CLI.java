@@ -136,9 +136,14 @@ public class CLI {
 
     private void onUrlEditCommand() {
         final String notFoundMessage = TerminalColors.RED + "\nТакой ссылки не существует, убедитесь, что вы создавали ее ранее" + TerminalColors.RESET;
+        final String cannotEditUrlMessage = TerminalColors.RED + "\nВы не являетесь автором ссылки, действие недоступно" + TerminalColors.RESET;
 
         Optional<ShortenedUrl> shortenedUrl = getShortenedUrlByName();
         shortenedUrl.ifPresentOrElse(url -> {
+            if (url.getAuthor() != sessionUser) {
+                System.out.println(cannotEditUrlMessage);
+                return;
+            }
             ShortenedUrlImpl urlToEdit = (ShortenedUrlImpl) url;
             System.out.print("Введите максимальное число переходов:\n>>> ");
             urlToEdit.updateMaxNavigations(scanner.nextInt());
