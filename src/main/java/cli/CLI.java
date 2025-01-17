@@ -144,7 +144,7 @@ public class CLI {
             urlToEdit.updateMaxNavigations(scanner.nextInt());
             System.out.print("Введите новое время жизни ссылки в секундах:\n>>> ");
             urlToEdit.updateExpirationDate(scanner.nextInt());
-            System.out.println(TerminalColors.GREEN + "Ссылка успешно обновлена!" + TerminalColors.RESET);
+            System.out.println(TerminalColors.GREEN + "\nСсылка успешно обновлена!" + TerminalColors.RESET);
             urlToEdit.printCharacteristics();
             scanner.nextLine();
         }, () -> System.out.println(notFoundMessage));

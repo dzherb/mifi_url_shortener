@@ -1,0 +1,5 @@
+{
+  "urlMinNavigations": 5,
+  "urlMaxTimeToLiveInSeconds": 100000,
+  "appDomain": "https://short.com"
+}

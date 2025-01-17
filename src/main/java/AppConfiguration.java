@@ -1,8 +1,13 @@
 package main.java;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import main.java.url_shortener.*;
 import main.java.users.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class AppConfiguration {
@@ -15,21 +20,33 @@ public class AppConfiguration {
     static private ShortenedUrlCleaner shortenedUrlCleanerInstance;
     static private Authentication authenticationInstance;
 
-    private final Integer urlDefaultMaxNavigations;
-    private final Integer urlDefaultTimeToLiveInSeconds;
+    private final Integer urlMinNavigations;
+    private final Integer urlMaxTimeToLiveInSeconds;
     private final String appDomain;
 
-    private static class ConfigNotInitializedException extends RuntimeException {}
+    public static class ConfigNotInitializedException extends RuntimeException {}
+    public static class InvalidConfigStructureException extends RuntimeException {}
 
-    private AppConfiguration(Integer urlDefaultMaxNavigations, Integer urlDefaultTimeToLiveInSeconds, String appDomain) {
-        this.urlDefaultMaxNavigations = urlDefaultMaxNavigations;
-        this.urlDefaultTimeToLiveInSeconds = urlDefaultTimeToLiveInSeconds;
+    private AppConfiguration(Integer urlMinNavigations, Integer urlMaxTimeToLiveInSeconds, String appDomain) {
+        this.urlMinNavigations = urlMinNavigations;
+        this.urlMaxTimeToLiveInSeconds = urlMaxTimeToLiveInSeconds;
         this.appDomain = appDomain;
     }
 
-    public static void initializeFromJsonFile(Path configFile) {
-        // todo
-        configInstance = new AppConfiguration(5, 500, "shrt.com");
+    public static void initializeFromJsonFile(Path configFile) throws IOException {
+        JSONObject configJson;
+        String configContent = Files.readString(configFile);
+        configJson = new JSONObject(configContent);
+
+        try {
+            configInstance = new AppConfiguration(
+                configJson.getInt("urlMinNavigations"),
+                configJson.getInt("urlMaxTimeToLiveInSeconds"),
+                configJson.getString("appDomain")
+            );
+        } catch (JSONException e) {
+            throw new InvalidConfigStructureException();
+        }
     }
 
     public static AppConfiguration getInstance() {
@@ -39,12 +56,12 @@ public class AppConfiguration {
         return configInstance;
     }
 
-    public Integer getUrlDefaultMaxNavigations() {
-        return urlDefaultMaxNavigations;
+    public Integer getUrlMinNavigations() {
+        return urlMinNavigations;
     }
 
-    public Integer getUrlDefaultTimeToLiveInSeconds() {
-        return urlDefaultTimeToLiveInSeconds;
+    public Integer getUrlMaxTimeToLiveInSeconds() {
+        return urlMaxTimeToLiveInSeconds;
     }
 
     public String getAppDomain() {

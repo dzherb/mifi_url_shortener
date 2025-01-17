@@ -33,13 +33,13 @@ public class ShortenedUrlImpl implements ShortenedUrl {
     }
 
     private Integer getFinalMaxNavigations(Integer maxNavigations) {
-        return Math.max(maxNavigations, AppConfiguration.getInstance().getUrlDefaultMaxNavigations());
+        return Math.max(maxNavigations, AppConfiguration.getInstance().getUrlMinNavigations());
     }
 
     private Date getExpirationDate(Integer timeToLiveInSeconds) {
         return new Date(
             System.currentTimeMillis() + Math.min(timeToLiveInSeconds,
-            AppConfiguration.getInstance().getUrlDefaultTimeToLiveInSeconds()) * 1000L
+            AppConfiguration.getInstance().getUrlMaxTimeToLiveInSeconds()) * 1000L
         );
     }
 

@@ -1,5 +1,6 @@
 package main.java.url_shortener;
 
+import main.java.AppConfiguration;
 import main.java.users.User;
 
 import java.util.*;
@@ -28,8 +29,10 @@ public class ShortenedUrlRegistryImpl implements ShortenedUrlRegistry {
     }
 
     private String parseHash(String url) {
-        // todo чекать соответствие домена
-        return url.substring(url.indexOf('/') + 1);  // todo а если передали с https:// ??? Можно чистить еще до этого
+        if (url == null || url.isEmpty() || !url.startsWith(AppConfiguration.getInstance().getAppDomain())) {
+            return null;
+        }
+        return url.substring(url.lastIndexOf('/') + 1);
     }
 
     @Override
